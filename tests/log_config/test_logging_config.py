@@ -1,5 +1,6 @@
 import pytest
-from src.logging.logging_config import setup_logger
+
+from src.log_config.logging_config import setup_logger
 
 
 @pytest.fixture
@@ -7,8 +8,9 @@ def log_dir(tmp_path):
     """ Create a temporary directory """
     return tmp_path / "logs"
 
+
 def test_logger_levels(log_dir):
-    """ Test logger levels """
+    """ Test log_config levels """
     logger = setup_logger(
         name = "test_logger",
         log_dir = str(log_dir),
@@ -37,7 +39,7 @@ def test_logger_levels(log_dir):
 
 
 def test_logger_invalid_level(log_dir):
-    """ Test that logger uses default level with invalid log_level """
+    """ Test that log_config uses default level with invalid log_level """
     logger = setup_logger(
         name = "test_invalid",
         log_dir = str(log_dir),
@@ -66,7 +68,7 @@ def test_logger_invalid_level(log_dir):
 
 
 def test_logger_rotation(log_dir):
-    """ Test that logger rotates log files when size limit is exceeded """
+    """ Test that log_config rotates log files when size limit is exceeded """
     logger = setup_logger(
         name = "test_rotation",
         log_dir = str(log_dir),

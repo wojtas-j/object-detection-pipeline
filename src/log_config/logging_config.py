@@ -11,7 +11,7 @@ def setup_logger(
         backup_count: int = 2
 ) -> logging.Logger:
     """
-    Configure of global logger.
+    Configure of global logger
 
     :param name: The name of the logger
     :param log_dir: Directory to store logs
