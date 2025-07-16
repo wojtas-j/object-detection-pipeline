@@ -1,0 +1,126 @@
+import pytest
+import zipfile
+import requests
+from unittest.mock import patch, MagicMock
+
+from src.exceptions.exceptions import DownloadError, InvalidInputError
+from src.datasets.datasets_utils import path_exists, download_file, unzip_file
+
+
+@pytest.fixture
+def temp_dir(tmp_path):
+    """ Create a temporary directory """
+    return tmp_path
+
+
+@pytest.fixture
+def sample_zip(temp_dir):
+    """ Create a sample ZIP file"""
+    zip_path = temp_dir / "test.zip"
+    with zipfile.ZipFile(zip_path, "w") as zip_file:
+        zip_file.writestr("file1.txt", " Content file1")
+        zip_file.writestr("file2.txt", " Content file2")
+
+    return zip_path
+
+
+def test_path_exists(temp_dir):
+    """ Test path_exists function for existing and non-existing paths """
+    assert path_exists(temp_dir) is True
+    assert path_exists(temp_dir / "nonexsting") is False
+
+
+def test_download_file_invalid_url():
+    """ Test download_file with invalid url """
+    with pytest.raises(InvalidInputError):
+        download_file("invalid_url", "test.zip")
+    with pytest.raises(InvalidInputError):
+        download_file("", "test.zip")
+
+
+def test_download_file_no_extension(temp_dir):
+    """ Test download_file with destination path lacking extension """
+    with pytest.raises(InvalidInputError):
+        download_file("http://example.com/file.zip", temp_dir / "test")
+
+
+@patch("src.datasets.datasets_utils.requests.get")
+def test_download_file_success(mock_get, temp_dir):
+    """ Test download_file with success download """
+    # Mock HTTP response
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.headers = {"content-length": 1024}
+    mock_response.iter_content.return_value = [b"data" * 256]
+    mock_response.raise_for_status.return_value = None
+
+    mock_response.__enter__.return_value = mock_response
+    mock_response.__exit__.return_value = None
+    mock_get.return_value = mock_response
+
+    # Test download
+    dest_path = temp_dir / "test.zip"
+    result = download_file("http://example.com/file.zip", dest_path)
+
+    # Verify results
+    assert result == dest_path
+    assert dest_path.exists()
+    assert dest_path.stat().st_size == 1024
+    mock_get.assert_called_once_with("http://example.com/file.zip", stream=True, timeout=60)
+
+
+@patch("src.datasets.datasets_utils.requests.get")
+def test_download_file_failure(mock_get, temp_dir):
+    """ Test download_file with failure download """
+    # Mock failed HTTP response
+    mock_response = MagicMock()
+    mock_response.raise_for_status.side_effect = requests.RequestException("Connection error")
+
+    mock_response.__enter__.return_value = mock_response
+    mock_response.__exit__.return_value = None
+    mock_get.return_value = mock_response
+
+    # Test download failure
+    dest_path = temp_dir / "test.zip"
+    with pytest.raises(DownloadError):
+        download_file("http://example.com/file.zip", dest_path, timeout=60)
+    assert not dest_path.exists()
+
+
+def test_unzip_file_success(temp_dir, sample_zip):
+    """ Test unzip_file with a valid ZIP file """
+    extract_dir = temp_dir / "extracted"
+    unzip_file(sample_zip, extract_dir)
+
+    # Verify extraction
+    assert extract_dir.exists()
+    assert (extract_dir / "file1.txt").exists()
+    assert (extract_dir / "file2.txt").exists()
+    assert len(list(extract_dir.rglob("*"))) == 2
+
+
+def test_unzip_file_nonexistent(temp_dir):
+    """ Test unzip_file with a nonexistent ZIP file"""
+    with pytest.raises(InvalidInputError):
+        unzip_file(temp_dir / "nonexistent", temp_dir / "extracted")
+
+
+def test_unzip_file_invalid_extension(temp_dir):
+    """ Test unzip_file with an invalid extension """
+    with pytest.raises(InvalidInputError):
+        unzip_file(temp_dir / "nonexistent.zip", temp_dir / "extracted")
+
+
+def test_unzip_file_empty_zip(temp_dir):
+    """ Test unzip_file with an empty ZIP file """
+    # Create empty zip
+    empty_zip = temp_dir / "empty.zip"
+    with zipfile.ZipFile(empty_zip, "w"):
+        pass
+
+    extract_dir = temp_dir / "extracted"
+    unzip_file(empty_zip, extract_dir)
+
+    # Verify extraction
+    assert extract_dir.exists()
+    assert len(list(extract_dir.rglob("*.txt"))) == 0
