@@ -5,12 +5,12 @@ from src.log_config.logging_config import setup_logger
 
 @pytest.fixture
 def log_dir(tmp_path):
-    """ Create a temporary directory """
+    """ Create a temporary directory. """
     return tmp_path / "logs"
 
 
 def test_logger_levels(log_dir):
-    """ Test log_config levels """
+    """ Test log_config levels. """
     logger = setup_logger(
         name = "test_logger",
         log_dir = str(log_dir),
@@ -39,7 +39,7 @@ def test_logger_levels(log_dir):
 
 
 def test_logger_invalid_level(log_dir):
-    """ Test that log_config uses default level with invalid log_level """
+    """ Test that log_config uses default level with invalid log_level. """
     logger = setup_logger(
         name = "test_invalid",
         log_dir = str(log_dir),
@@ -68,7 +68,7 @@ def test_logger_invalid_level(log_dir):
 
 
 def test_logger_rotation(log_dir):
-    """ Test that log_config rotates log files when size limit is exceeded """
+    """ Test that log_config rotates log files when size limit is exceeded. """
     logger = setup_logger(
         name = "test_rotation",
         log_dir = str(log_dir),
@@ -77,12 +77,12 @@ def test_logger_rotation(log_dir):
         backup_count = 1
     )
 
-    # Create and write data to trigger rotatation
+    # Create and write data to trigger rotation
     message = "*" * 250
     for _ in range(5):
         logger.info(message)
 
-    # Chceck if logs file exists
+    # Check if logs file exists
     log_file = log_dir / "test_rotation.log"
     rotated_file = log_dir / "test_rotation.log.1"
     assert log_file.exists(), "Log file was not created"

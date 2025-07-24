@@ -1,5 +1,7 @@
 # Project
-.logs/*
+/outputs
+/logs
+/datasets
 
 # PyCharm
 .idea/*

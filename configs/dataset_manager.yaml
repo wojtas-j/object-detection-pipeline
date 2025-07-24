@@ -1,0 +1,5 @@
+manager:
+  dataset_dir: datasets
+  types:
+    - coco
+    - bdd100k

@@ -3,6 +3,8 @@ import zipfile
 import requests
 from pathlib import Path
 from urllib.parse import urlparse
+from tqdm import tqdm
+from omegaconf import DictConfig
 
 from src.exceptions.exceptions import InvalidInputError, DownloadError, ExtractionError
 from src.log_config.logging_config import setup_logger
@@ -23,16 +25,19 @@ def path_exists(path: str | Path) -> bool:
     return path.exists()
 
 
-def download_file(url: str, dest_path: str | Path, timeout: int=60) -> Path:
+def download_file(url: str, dest_path: str | Path, cfg: DictConfig) -> Path:
     """
     Download a file from a URL.
+
     :param url: URL to download
     :param dest_path: Path to download to
-    :param timeout: Timeout for HTTP requests
+    :param cfg: Hydra configuration
     :return: Path to downloaded file
     :raises InvalidInputError: If the URL or destination path is invalid
     :raises DownloadError: If the download fails
     """
+    timeout = cfg.dataset.download_timeout
+    chunk_size = cfg.dataset.chunk_size
 
     # Input validation
     if not url or not isinstance(url, str) or not urlparse(url).scheme:
@@ -55,11 +60,14 @@ def download_file(url: str, dest_path: str | Path, timeout: int=60) -> Path:
         with requests.get(url, stream=True, timeout=timeout) as r:
             r.raise_for_status()
             total_size = int(r.headers.get("content-length", 0))
-            log.debug(f"Excepected file size: {total_size}")
-            with dest_path.open("wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
+            log.debug(f"Excepted file size: {total_size}")
+            with dest_path.open("wb") as f, tqdm(
+                    total=total_size, unit="B", unit_scale=True, desc="Downloading"
+            ) as pbar:
+                for chunk in r.iter_content(chunk_size=chunk_size):
                     if chunk:
                         f.write(chunk)
+                        pbar.update(len(chunk))
             download_time = time.time() - start_time
             actual_size = dest_path.stat().st_size
             log.info(f"Downloaded file to: {dest_path}, size: {actual_size} bytes, time: {download_time:.2f} seconds")
@@ -81,13 +89,12 @@ def unzip_file(zip_path: str | Path, extract_path: str | Path) -> None:
 
     :param zip_path: Path to the zip file
     :param extract_path: Directory to extract zip file to
-    :return None
     :raises InvalidInputError: If the zip_path or extract_path is invalid
-    :raises ExtractError: If the extraction fails
+    :raises ExtractionError: If the extraction fails
     """
 
     zip_path = Path(zip_path)
-    extract_path = Path(extract_path)
+    extract_path = Path(extract_path).resolve()
 
     # Input validation
     if not zip_path.exists():
@@ -98,6 +105,10 @@ def unzip_file(zip_path: str | Path, extract_path: str | Path) -> None:
         log.error(f"File {zip_path} is not a zip file")
         raise InvalidInputError(f"File {zip_path} is not a zip file")
 
+    if extract_path.exists() and not extract_path.is_dir():
+        log.error(f"Extract path {extract_path} is not a directory")
+        raise InvalidInputError(f"Extract path {extract_path} is not a directory")
+
     # Check if the directory exists
     extract_path.mkdir(parents=True, exist_ok=True)
     log.debug(f"Extracting {zip_path} to {extract_path}")
@@ -107,7 +118,6 @@ def unzip_file(zip_path: str | Path, extract_path: str | Path) -> None:
         log.info(f"Extracting {zip_path} to {extract_path}")
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(extract_path)
-
             extracted_files = len(list(extract_path.rglob("*")))
             log.info(f"Extracted {extracted_files} files")
     except zipfile.BadZipFile as e:

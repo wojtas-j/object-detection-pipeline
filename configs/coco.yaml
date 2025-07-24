@@ -1,0 +1,12 @@
+dataset:
+  name: coco
+  download_urls:
+    - url: http://images.cocodataset.org/zips/train2017.zip
+      file_name: train2017.zip
+    - url: http://images.cocodataset.org/zips/val2017.zip
+      file_name: val2017.zip
+    - url: http://images.cocodataset.org/annotations/annotations_trainval2017.zip
+      file_name: annotations_trainval2017.zip
+  extract_dir: coco
+  download_timeout: 60
+  chunk_size: 8192

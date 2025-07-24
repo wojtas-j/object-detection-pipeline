@@ -1,0 +1,12 @@
+dataset:
+  name: bdd100k
+  download_urls:
+    - url: http://dl.yf.io/bdd100k/video_parts/bdd100k_videos_train_00.zip
+      file_name: bdd100k_videos_train_00.zip
+    - url: http://dl.yf.io/bdd100k/video_parts/bdd100k_videos_val_00.zip
+      file_name: bdd100k_videos_val_00.zip
+    - url: http://dl.yf.io/bdd100k/bdd100k_labels.zip
+      file_name: bdd100k_labels.zip
+  extract_dir: bdd100k
+  download_timeout: 60
+  chunk_size: 8192
