@@ -38,13 +38,13 @@ def download_file(url: str, dest_path: str | Path, cfg: DictConfig) -> Path:
     """
     timeout = cfg.dataset.download_timeout
     chunk_size = cfg.dataset.chunk_size
+    dest_path = Path(dest_path)
 
     # Input validation
     if not url or not isinstance(url, str) or not urlparse(url).scheme:
         log.error(f"Invalid URL: {url}")
         raise InvalidInputError(f"Invalid URL: {url}")
 
-    dest_path = Path(dest_path)
     if not dest_path.suffix:
         log.error(f"Destination path must end with an extension: {dest_path}")
         raise InvalidInputError(f"Destination path must end with an extension: {dest_path}")
@@ -52,6 +52,22 @@ def download_file(url: str, dest_path: str | Path, cfg: DictConfig) -> Path:
     # Check if the directory exists
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     log.debug(f"Check if {dest_path} exists")
+
+    # Check if file already exists and matches expected size
+    if path_exists(dest_path):
+        try:
+            with requests.head(url, timeout=timeout) as r:
+                r.raise_for_status()
+                expected_size = int(r.headers.get("content-length", 0))
+            actual_size = dest_path.stat().st_size
+            if expected_size == 0 or actual_size == expected_size:
+                log.info(f"File {dest_path} already exists and matches expected size ({actual_size} bytes), skipping download")
+                return dest_path
+            else:
+                log.warning(f"File {dest_path} exists but size ({actual_size} bytes) does not match expected ({expected_size} bytes), re-downloading")
+                dest_path.unlink()
+        except requests.exceptions.RequestException as e:
+            log.warning(f"Could not verify file size for {url} ({e}), proceeding with download")
 
     # Download file
     try:

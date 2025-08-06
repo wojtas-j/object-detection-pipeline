@@ -5,8 +5,34 @@ dataset:
       file_name: bdd100k_videos_train_00.zip
     - url: http://dl.yf.io/bdd100k/video_parts/bdd100k_videos_val_00.zip
       file_name: bdd100k_videos_val_00.zip
-    - url: http://dl.yf.io/bdd100k/bdd100k_labels.zip
+    - url: https://dl.cv.ethz.ch/bdd100k/data/box_track_labels_trainval.zip
       file_name: bdd100k_labels.zip
   extract_dir: bdd100k
   download_timeout: 60
   chunk_size: 8192
+  image_target_size: [640, 640]
+  video_fps: 30
+  paths:
+    train_images: bdd100k/images/train
+    val_images: bdd100k/images/val
+    train_videos: bdd100k/videos/train
+    val_videos: bdd100k/videos/val
+    train_annotations: bdd100k/labels/box_track_20/train
+    val_annotations: bdd100k/labels/box_track_20/val
+  model:
+    yolo:
+      format: yolo
+      output_dir: bdd100k/yolo
+    faster_rcnn:
+      format: coco
+      output_dir: bdd100k/faster_rcnn
+  classes:
+    num_classes: 7
+    selected_classes:
+      - person
+      - bicycle
+      - car
+      - motorcycle
+      - bus
+      - train
+      - truck

@@ -10,3 +10,25 @@ dataset:
   extract_dir: coco
   download_timeout: 60
   chunk_size: 8192
+  paths:
+    train_images: "coco/train2017"
+    val_images: "coco/val2017"
+    train_annotations: "coco/annotations/instances_train2017.json"
+    val_annotations: "coco/annotations/instances_val2017.json"
+  model:
+    yolo:
+      format: "yolo"
+      output_dir: "coco/yolo"
+    faster_rcnn:
+      format: "coco"
+      output_dir: "coco/faster_rcnn"
+  classes:
+    num_classes: 7
+    selected_classes:
+      - person
+      - bicycle
+      - car
+      - motorcycle
+      - bus
+      - train
+      - truck
