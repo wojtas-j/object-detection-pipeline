@@ -29,6 +29,8 @@ def setup_logger(
     level = getattr(logging, log_level.upper(), logging.INFO)
     logger = logging.getLogger(name)
     logger.setLevel(level)
+    logger.propagate = False
+    logger.handlers.clear()
 
     # Create file handler with size based rotation
     if logger.handlers:
@@ -42,7 +44,7 @@ def setup_logger(
     )
     file_handler.setLevel(level)
 
-    # Create coonsole handler
+    # Create console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
 
