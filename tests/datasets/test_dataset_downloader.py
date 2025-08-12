@@ -59,13 +59,13 @@ def test_coco_downloader_success(mock_unzip, mock_download, mock_hydra_config, t
     downloader.download_and_extract(temp_dir, mock_hydra_config["coco"])
 
     # Verify results
-    assert mock_download.call_count == 3
+    assert mock_download.call_count == 3, f"Expected 3 download calls, got {mock_download.call_count}"
     mock_download.assert_any_call(
         "http://images.cocodataset.org/zips/train2017.zip",
         temp_dir / "train2017.zip",
         mock_hydra_config["coco"]
     )
-    assert mock_unzip.call_count == 3
+    assert mock_unzip.call_count == 3, f"Expected 3 unzip calls, got {mock_unzip.call_count}"
     mock_unzip.assert_any_call(
         temp_dir / "train2017.zip",
         temp_dir / "coco"
@@ -83,8 +83,8 @@ def test_coco_downloader_download_failure(mock_unzip, mock_download, mock_hydra_
     with pytest.raises(DownloadError):
         downloader.download_and_extract(temp_dir, mock_hydra_config["coco"])
 
-    assert mock_download.called
-    assert not mock_unzip.called
+    assert mock_download.called, "Expected download_file to be called, but it was not."
+    assert not mock_unzip.called, "Expected unzip_file NOT to be called on download failure."
 
 @patch("src.datasets.dataset_downloader.download_file")
 @patch("src.datasets.dataset_downloader.unzip_file")
@@ -103,8 +103,8 @@ def test_coco_downloader_extract_failure(mock_unzip, mock_download, mock_hydra_c
     with pytest.raises(ExtractionError):
         downloader.download_and_extract(temp_dir, mock_hydra_config["coco"])
 
-    assert mock_download.call_count == 3
-    assert mock_unzip.called
+    assert mock_download.call_count == 3, f"Expected 3 download calls, got {mock_download.call_count}"
+    assert mock_unzip.called, "Expected unzip_file to be called, but it was not."
 
 @patch("src.datasets.dataset_downloader.download_file")
 @patch("src.datasets.dataset_downloader.unzip_file")
@@ -117,8 +117,8 @@ def test_coco_downloader_invalid_input(mock_unzip, mock_download, mock_hydra_con
     with pytest.raises(InvalidInputError):
         downloader.download_and_extract(temp_dir, mock_hydra_config["coco"])
 
-    assert mock_download.called
-    assert not mock_unzip.called
+    assert mock_download.called, "Expected download_file to be called, but it was not."
+    assert not mock_unzip.called, "Expected unzip_file NOT to be called for invalid input."
 
 
 @patch("src.datasets.dataset_downloader.download_file")
@@ -135,13 +135,13 @@ def test_bdd100k_downloader_success(mock_unzip, mock_download, mock_hydra_config
     downloader.download_and_extract(temp_dir, mock_hydra_config["bdd100k"])
 
     # Verify results
-    assert mock_download.call_count == 3
+    assert mock_download.call_count == 3, f"Expected 3 download calls, got {mock_download.call_count}"
     mock_download.assert_any_call(
         "http://dl.yf.io/bdd100k/video_parts/bdd100k_videos_train_00.zip",
         temp_dir / "bdd100k_videos_train_00.zip",
         mock_hydra_config["bdd100k"]
     )
-    assert mock_unzip.call_count == 3
+    assert mock_unzip.call_count == 3, f"Expected 3 unzip calls, got {mock_unzip.call_count}"
     mock_unzip.assert_any_call(
         temp_dir / "bdd100k_videos_train_00.zip",
         temp_dir / "bdd100k"
@@ -159,8 +159,8 @@ def test_bdd100k_downloader_download_failure(mock_unzip, mock_download, mock_hyd
     with pytest.raises(DownloadError):
         downloader.download_and_extract(temp_dir, mock_hydra_config["bdd100k"])
 
-    assert mock_download.called
-    assert not mock_unzip.called
+    assert mock_download.called, "Expected download_file to be called, but it was not."
+    assert not mock_unzip.called, "Expected unzip_file NOT to be called on download failure."
 
 
 @patch("src.datasets.dataset_downloader.download_file")
@@ -179,8 +179,8 @@ def test_bdd100k_downloader_extract_failure(mock_unzip, mock_download, mock_hydr
     with pytest.raises(ExtractionError):
         downloader.download_and_extract(temp_dir, mock_hydra_config["bdd100k"])
 
-    assert mock_download.call_count == 3
-    assert mock_unzip.called
+    assert mock_download.call_count == 3, f"Expected 3 download calls, got {mock_download.call_count}"
+    assert mock_unzip.called, "Expected unzip_file to be called, but it was not."
 
 
 @patch("src.datasets.dataset_downloader.download_file")
@@ -194,5 +194,5 @@ def test_bdd100k_downloader_invalid_input(mock_unzip, mock_download, mock_hydra_
     with pytest.raises(InvalidInputError):
         downloader.download_and_extract(temp_dir, mock_hydra_config["bdd100k"])
 
-    assert mock_download.called
-    assert not mock_unzip.called
+    assert mock_download.called, "Expected download_file to be called, but it was not."
+    assert not mock_unzip.called, "Expected unzip_file NOT to be called for invalid input."

@@ -208,5 +208,6 @@ def test_dataset_manager_invalid_stage(mock_hydra_config):
     })
     manager = DatasetManager()
 
+    # Verify results
     with pytest.raises(ValueError):
         manager.run_manager(invalid_config, mock_hydra_config["dataset_configs"])
