@@ -1,0 +1,6 @@
+manager:
+  dataset_dir: datasets
+  stage: 1 # 0: download and extract, 1: convert and process
+  types:
+    - coco
+    - bdd100k
