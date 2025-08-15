@@ -51,7 +51,7 @@ class DatasetManager(Generic[T, U]):
         log.info(f"Converting dataset {cfg.dataset.name} to {dataset_dir}")
         self.converter.convert_and_process(dataset_dir, cfg)
 
-    def process(self, dataset_dir: str | Path, cfg: DictConfig, stage: int) -> None:
+    def execute_stage(self, dataset_dir: str | Path, cfg: DictConfig, stage: int) -> None:
         """
         Download, extract and prepare dataset.
 
@@ -109,12 +109,12 @@ class DatasetManager(Generic[T, U]):
                 self.downloader = None
                 self.converter = converter_map.get(manager_type)()
             try:
-                self.process(dataset_dir, dataset_configs[manager_type], stage)
+                self.execute_stage(dataset_dir, dataset_configs[manager_type], stage)
             except (InvalidInputError, DownloadError, ExtractionError, ValueError) as e:
-                log.error(f"Failed to process dataset {manager_type}: {e}")
+                log.error(f"Failed to execute stage: {manager_type}: {e}")
                 raise
             except Exception as e:
-                log.error(f"Unexpected error while processing dataset {manager_type}: {e}")
+                log.error(f"Unexpected error while executing stage: {manager_type}: {e}")
                 raise
 
 
