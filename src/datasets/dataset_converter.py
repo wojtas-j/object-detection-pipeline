@@ -55,7 +55,6 @@ class DatasetConverter(ABC):
         log.info(f"Converting {cfg.dataset.name} dataset in {dataset_dir}")
         self.convert_annotations(dataset_dir, cfg)
         log.info(f"Finished conversion for {cfg.dataset.name} dataset in {dataset_dir}")
-
 #endregion
 
 #region COCOConverter
@@ -464,6 +463,15 @@ class BDD100KConverter(DatasetConverter):
         target_width, target_height = cfg.dataset.image_target_size
         selected_classes = cfg.dataset.classes.selected_classes
 
+        try:
+            if output_dir.exists() and output_dir.is_dir():
+                shutil.rmtree(output_dir)
+                log.info(f"Removed old Faster R-CNN annotations folder: {output_dir}")
+            else:
+                log.info(f"Faster R-CNN annotations folder does not exist, nothing to remove: {output_dir}")
+        except Exception as e:
+            log.error(f"Failed to remove old Faster R-CNN annotations folder {output_dir}: {e}")
+
         for split in ["train", "val"]:
             json_dir = dataset_dir / cfg.dataset.paths[f"{split}_annotations"]
             image_dir = dataset_dir / cfg.dataset.paths[f"{split}_images"]
@@ -559,6 +567,15 @@ class BDD100KConverter(DatasetConverter):
         """
         target_width, target_height = cfg.dataset.image_target_size
         selected_classes = cfg.dataset.classes.selected_classes
+
+        try:
+            if output_dir.exists() and output_dir.is_dir():
+                shutil.rmtree(output_dir)
+                log.info(f"Removed old YOLO labels folder: {output_dir}")
+            else:
+                log.info(f"YOLO labels folder does not exist, nothing to remove: {output_dir}")
+        except Exception as e:
+            log.error(f"Failed to remove old YOLO labels folder {output_dir}: {e}")
 
         for split in ["train", "val"]:
             json_dir = dataset_dir / cfg.dataset.paths[f"{split}_annotations"]
