@@ -17,12 +17,12 @@ dataset:
     val_images: bdd100k/images/val
     train_videos: bdd100k/videos/train
     val_videos: bdd100k/videos/val
-    train_annotations: bdd100k/labels/box_track_20/train
-    val_annotations: bdd100k/labels/box_track_20/val
+    train_annotations: bdd100k/base_labels/train
+    val_annotations: bdd100k/base_labels/val
   model:
     yolo:
       format: yolo
-      output_dir: bdd100k/yolo
+      output_dir: bdd100k/labels
     faster_rcnn:
       format: coco
       output_dir: bdd100k/faster_rcnn
