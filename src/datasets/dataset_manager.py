@@ -118,7 +118,7 @@ class DatasetManager(Generic[T, U]):
                 raise
 
 
-@hydra.main(config_path="../../configs", config_name="dataset_manager", version_base=None)
+@hydra.main(config_path="../../configs/datasets", config_name="dataset_manager", version_base=None)
 def main(cfg: DictConfig) -> None:
     dataset_configs = {}
     for dataset_type in cfg.manager.types:
