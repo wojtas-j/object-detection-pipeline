@@ -1,4 +1,5 @@
 import re
+import shutil
 import cv2
 import json
 import os
@@ -14,6 +15,7 @@ from src.log_config.logging_config import setup_logger
 log = setup_logger(__name__)
 
 
+#region DatasetConverter
 class DatasetConverter(ABC):
     """ Abstract class to convert and process dataset to different formats. """
 
@@ -54,6 +56,8 @@ class DatasetConverter(ABC):
         self.convert_annotations(dataset_dir, cfg)
         log.info(f"Finished conversion for {cfg.dataset.name} dataset in {dataset_dir}")
 
+#endregion
+
 #region COCOConverter
 class COCOConverter(DatasetConverter):
     """ Convert and process COCO dataset to different formats. """
@@ -93,11 +97,20 @@ class COCOConverter(DatasetConverter):
         """
         dataset_dir = Path(dataset_dir)
 
+        try:
+            if output_dir.exists() and output_dir.is_dir():
+                shutil.rmtree(output_dir)
+                log.info(f"Removed old YOLO labels folder: {output_dir}")
+            else:
+                log.info(f"YOLO labels folder does not exist, nothing to remove: {output_dir}")
+        except Exception as e:
+            log.error(f"Failed to remove old YOLO labels folder {output_dir}: {e}")
+
         # Process train and val annotations
         for split in ["train", "val"]:
             annotations_path = dataset_dir / cfg.dataset.paths[f"{split}_annotations"]
             images_path = dataset_dir / cfg.dataset.paths[f"{split}_images"]
-            output_labels_dir = output_dir / split / "labels"
+            output_labels_dir = output_dir / split
 
             if not annotations_path.exists():
                 log.error(f"No annotations found for {split} dataset in {annotations_path}")
@@ -177,10 +190,22 @@ class COCOConverter(DatasetConverter):
         """
         dataset_dir = Path(dataset_dir)
 
+        for split in ["train", "val"]:
+            output_annotations_path = output_dir / f"frcnn_instances_{split}2017.json"
+            try:
+                if output_annotations_path.exists():
+                    output_annotations_path.unlink()
+                    log.info(f"Removed old Faster-RCNN annotations file: {output_annotations_path}")
+                else:
+                    log.info(
+                        f"Faster-RCNN annotations file does not exist, nothing to remove: {output_annotations_path}")
+            except Exception as e:
+                log.error(f"Failed to remove {output_annotations_path}: {e}")
+
         # Process train and val annotations
         for split in ["train", "val"]:
             annotations_path = dataset_dir / cfg.dataset.paths[f"{split}_annotations"]
-            output_annotations_path = output_dir / f"instances_{split}.json"
+            output_annotations_path = output_dir / f"frcnn_instances_{split}2017.json"
 
             if not annotations_path.exists():
                 log.error(f"Annotations file {annotations_path} not found")

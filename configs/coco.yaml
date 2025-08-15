@@ -11,17 +11,17 @@ dataset:
   download_timeout: 60
   chunk_size: 8192
   paths:
-    train_images: "coco/train2017"
-    val_images: "coco/val2017"
+    train_images: "coco/images/train"
+    val_images: "coco/images/val"
     train_annotations: "coco/annotations/instances_train2017.json"
     val_annotations: "coco/annotations/instances_val2017.json"
   model:
     yolo:
       format: "yolo"
-      output_dir: "coco/yolo"
+      output_dir: "coco/labels"
     faster_rcnn:
       format: "coco"
-      output_dir: "coco/faster_rcnn"
+      output_dir: "coco/annotations"
   classes:
     num_classes: 7
     selected_classes:

@@ -222,7 +222,7 @@ def test_coco_converter_convert_to_yolo_success(mock_image_open, mock_json_load,
 
     for split in ["train", "val"]:
         annotations_dir = dataset_dir / "annotations"
-        images_dir = dataset_dir / f"{split}2017"
+        images_dir = dataset_dir / f"{split}"
         annotations_dir.mkdir(parents=True, exist_ok=True)
         images_dir.mkdir(parents=True, exist_ok=True)
         for image in mock_coco_annotations["images"]:
@@ -235,11 +235,10 @@ def test_coco_converter_convert_to_yolo_success(mock_image_open, mock_json_load,
     # Verify results
     with patch("pathlib.Path.exists", return_value=True):
         converter._convert_to_yolo(dataset_dir, mock_coco_hydra_config, output_dir)
-
     assert any(str(call[0][0]).replace('\\', '/').endswith(f"annotations/instances_{split}2017.json")
         and call[0][1] == "r" for split in ["train", "val"] for call in mock_open_file.call_args_list), \
         f"Expected annotations JSON to be opened for both 'train' and 'val', got: {[c[0] for c in mock_open_file.call_args_list]}"
-    assert any(str(call[0][0]).replace('\\', '/').endswith(f"yolo/{split}/labels/000000000001.txt")
+    assert any(str(call[0][0]).replace('\\', '/').endswith(f"yolo/{split}/000000000001.txt")
         and call[0][1] == "w" for split in ["train", "val"] for call in mock_open_file.call_args_list), \
         f"Expected YOLO label files to be created for both 'train' and 'val', got: {[c[0] for c in mock_open_file.call_args_list]}"
     handle = mock_open_file()
@@ -268,7 +267,7 @@ def test_coco_converter_convert_to_coco_success(mock_json_load, mock_open_file, 
 
     # Verify results
     written_files = [str(call[0][0]) for call in mock_open_file.call_args_list if call[0][1] == "w"]
-    assert any(f"instances_{split}.json" in f for split in ["train", "val"] for f in written_files), f"Expected write calls for instances_{split}.json not found in {written_files}"
+    assert any(f"frcnn_instances_{split}2017.json" in f for split in ["train", "val"] for f in written_files), f"Expected write calls for instances_{split}.json not found in {written_files}"
 
 
 def test_coco_converter_convert_to_yolo_missing_annotations(mock_coco_hydra_config, temp_dir):
@@ -310,7 +309,7 @@ def test_coco_converter_convert_to_coco_invalid_annotations(mock_json_load, mock
 
     # Verify results
     written_files = [str(call[0][0]) for call in mock_open_file.call_args_list if call[0][1] == "w"]
-    assert any(f"instances_{split}.json" in f for split in ["train", "val"] for f in written_files), f"Expected write calls for instances_{split}.json not found in {written_files}"
+    assert any(f"frcnn_instances_{split}2017.json" in f for split in ["train", "val"] for f in written_files), f"Expected write calls for instances_{split}.json not found in {written_files}"
     handle = mock_open_file()
     handle.write.assert_called()
 #endregion
