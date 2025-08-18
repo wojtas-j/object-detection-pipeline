@@ -1,0 +1,12 @@
+manager:
+  mode: 2 # 0 - training, 1 - evaluation, 2 - training and evaluation
+  selected_model: "yolo"
+  models:
+    yolo:
+      name: "yolo"
+      dataset_train: "coco"
+      dataset_eval: "bdd100k"
+    faster-rcnn:
+      name: "faster-rcnn"
+      dataset_train: "coco"
+      dataset_eval: "bdd100k"

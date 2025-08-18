@@ -8,7 +8,7 @@ from src.exceptions.exceptions import InvalidInputError, DownloadError, Extracti
 from src.datasets.dataset_downloader import DatasetDownloader, COCODownloader, BDD100KDownloader
 from src.log_config.logging_config import setup_logger
 
-log = setup_logger(__name__)
+log = setup_logger("src.datasets.dataset_manager")
 T = TypeVar('T', bound=DatasetDownloader)
 U = TypeVar('U', bound=DatasetConverter)
 

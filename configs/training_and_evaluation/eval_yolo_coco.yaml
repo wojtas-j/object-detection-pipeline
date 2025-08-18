@@ -1,0 +1,33 @@
+# Paths to coco dataset
+train: datasets/coco/images/train
+val: datasets/coco/images/val
+
+# Number of classes
+nc: 7
+
+# Class names
+names:
+  - person
+  - bicycle
+  - car
+  - motorcycle
+  - bus
+  - train
+  - truck
+
+# Evaluation
+evaluation:
+  name: "coco_evaluation"
+  model: "yolo11s.pt"
+  dataset: "coco"
+  model_path: ""
+  project: "runs/yolo/evaluation"
+  modify_model: False
+  eval_videos: False
+
+  imgsz: 640      # Input image size for training_and_evaluation (YOLO will resize all images to this width/height)
+  batch: 16       # Number of images per batch. Larger batch → more stable training_and_evaluation but requires more VRAM
+  workers: 6      # Number of CPU threads used for loading data during training_and_evaluation
+
+  conf: 0.25      # Confidence threshold for predictions; detections above this value are considered valid
+  iou: 0.6        # Intersection over Union threshold used for NMS (Non-Maximum Suppression) to remove overlapping detections
