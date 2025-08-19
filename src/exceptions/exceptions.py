@@ -15,3 +15,15 @@ class DownloadError(Exception):
 
 class ExtractionError(Exception):
     pass
+
+
+class TrainingError(Exception):
+    pass
+
+
+class EvaluationError(Exception):
+    pass
+
+
+class YamlConfigError(Exception):
+    pass

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import TypeVar, Generic
 from omegaconf import DictConfig
 
+from src.exceptions.exceptions import TrainingError, YamlConfigError
 from src.log_config.logging_config import setup_logger
 from src.training.model_trainer import ModelTrainer, YOLOTrainer
 from src.training.model_evaluator import ModelEvaluator, YOLOEvaluator
@@ -14,6 +15,13 @@ U = TypeVar('U', bound=ModelEvaluator)
 
 @dataclass
 class DualDictConfig:
+    """
+    Wrapper for training and evaluation configurations.
+
+    Attributes:
+        train (DictConfig): Hydra config for training stage.
+        eval (DictConfig): Hydra config for evaluation stage.
+    """
     train: DictConfig
     eval: DictConfig
 
@@ -40,7 +48,6 @@ class TrainEvalManager(Generic[T]):
 
         log.info(f"Started {cfg.training.model} training: {cfg.training.name}")
         self.trainer.train_model(cfg)
-        log.info(f"Finished {cfg.training.model} training: {cfg.training.name}")
 
     def evaluate(self, cfg: DictConfig) -> None:
         """
@@ -51,7 +58,6 @@ class TrainEvalManager(Generic[T]):
 
         log.info(f"Started {cfg.evaluation.model} evaluation: {cfg.evaluation.name}")
         self.evaluator.evaluate_model(cfg)
-        log.info(f"Finished {cfg.evaluation.model} evaluation: {cfg.evaluation.name}")
 
     def run_manager(self, model_name: str, mode: int, cfg: DualDictConfig) -> None:
         """
@@ -77,13 +83,13 @@ class TrainEvalManager(Generic[T]):
                 raise ValueError(f"Unknown trainer type: {model_name}")
             self.trainer = trainers_map.get(model_name)()
             self.evaluator = None
-        if mode == 1: # evaluation only
+        elif mode == 1: # evaluation only
             if model_name not in evaluators_map:
                 log.error(f"Unknown evaluator type: {model_name}")
                 raise ValueError(f"Unknown evaluator type: {model_name}")
             self.trainer = None
             self.evaluator = evaluators_map.get(model_name)()
-        if mode == 2: # training and evaluation
+        elif mode == 2: # training and evaluation
             if model_name not in trainers_map or model_name not in evaluators_map:
                 log.error(f"Unknown trainer or evaluator type: {model_name}")
                 raise ValueError(f"Unknown trainer or evaluator type: {model_name}")
@@ -91,7 +97,7 @@ class TrainEvalManager(Generic[T]):
             self.evaluator = evaluators_map.get(model_name)()
         else:
             log.error(f"Unknown mode: {mode}")
-            raise ValueError(f"Unknown mode: {mode}")
+            raise YamlConfigError(f"Unknown mode: {mode}")
 
         # Run
         try:
@@ -99,7 +105,7 @@ class TrainEvalManager(Generic[T]):
                 self.train(cfg.train)
             if self.evaluator is not None:
                 self.evaluate(cfg.eval)
-        except Exception as e:
+        except (TrainingError, YamlConfigError, Exception) as e:
             log.error(f"Failed to execute: {model_name}: {e}")
             raise
 
@@ -107,11 +113,44 @@ class TrainEvalManager(Generic[T]):
 @hydra.main(config_path="../../configs/training_and_evaluation", config_name="train_eval_manager", version_base=None)
 def main(cfg: DictConfig) -> None:
     selected_model = cfg.manager.selected_model
+    selected_dataset_train = cfg.manager.selected_dataset_train
+    selected_dataset_eval = cfg.manager.selected_dataset_eval
+
+    if selected_model is None or selected_model not in cfg.manager.models:
+        raise YamlConfigError(f"Invalid or missing selected_model: {selected_model}")
+
     model = cfg.manager.models[selected_model]
-    config = DualDictConfig(
-        train = hydra.compose(config_name=f"train_{model.name}_{model.dataset_train}"),
-        eval = hydra.compose(config_name=f"eval_{model.name}_{model.dataset_eval}")
-    )
+    if cfg.manager.mode in (0, 2):
+        if selected_dataset_train is None:
+            raise YamlConfigError(f"Invalid or missing selected_dataset_train: {selected_dataset_train}")
+        if selected_dataset_train not in model.datasets_train:
+            raise YamlConfigError(
+                f"Invalid dataset for training: {selected_dataset_train}. \n"
+                f"Available datasets: {model.datasets_train}"
+            )
+
+    if cfg.manager.mode in (1, 2):
+        if selected_dataset_eval is None:
+            raise YamlConfigError(f"Invalid or missing selected_dataset_eval: {selected_dataset_eval}")
+        if selected_dataset_eval not in model.datasets_eval:
+            raise YamlConfigError(
+                f"Invalid dataset for evaluation: {selected_dataset_eval}."
+                f"Available datasets: {model.datasets_eval}"
+            )
+
+    train_cfg = None
+    eval_cfg = None
+    if cfg.manager.mode in (0, 2) and selected_dataset_train is not None:
+        train_cfg = hydra.compose(
+            config_name=f"train_{model.name}_{selected_dataset_train}"
+        )
+
+    if cfg.manager.mode in (1, 2) and selected_dataset_eval is not None:
+        eval_cfg = hydra.compose(
+            config_name=f"eval_{model.name}_{selected_dataset_eval}"
+        )
+
+    config = DualDictConfig(train=train_cfg, eval=eval_cfg)
     manager = TrainEvalManager()
     manager.run_manager(selected_model, cfg.manager.mode, config)
 
