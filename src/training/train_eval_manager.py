@@ -46,7 +46,7 @@ class TrainEvalManager(Generic[T]):
         :param cfg: Hydra configuration file.
         """
 
-        log.info(f"Started {cfg.training.model} training: {cfg.training.name}")
+        log.info(f"Starting training: {cfg.training.name}")
         self.trainer.train_model(cfg)
 
     def evaluate(self, cfg: DictConfig) -> None:
@@ -64,9 +64,11 @@ class TrainEvalManager(Generic[T]):
         Process training and evaluation models from command line.
 
         :param model_name: Name of the model to train/evaluate.
-        :param mode:
-        :param cfg:
-        :raises ValueError:
+        :param mode: Execution mode for the manager. (0 - training only, 1 - evaluation only, 2 - both).
+        :param cfg: Hydra configuration file.
+        :raises: TrainingError: Raised when model training fails due to CUDA/device issues or internal training errors.
+        :raises: YamlConfigError: Raised when configuration is invalid.
+        :raises: RuntimeError: Catch-all for unexpected runtime errors during training or evaluation.
         """
 
         # Prepare proper classes
@@ -80,19 +82,19 @@ class TrainEvalManager(Generic[T]):
         if mode == 0: # training only
             if model_name not in trainers_map:
                 log.error(f"Unknown trainer type: {model_name}")
-                raise ValueError(f"Unknown trainer type: {model_name}")
+                raise YamlConfigError(f"Unknown trainer type: {model_name}")
             self.trainer = trainers_map.get(model_name)()
             self.evaluator = None
         elif mode == 1: # evaluation only
             if model_name not in evaluators_map:
                 log.error(f"Unknown evaluator type: {model_name}")
-                raise ValueError(f"Unknown evaluator type: {model_name}")
+                raise YamlConfigError(f"Unknown evaluator type: {model_name}")
             self.trainer = None
             self.evaluator = evaluators_map.get(model_name)()
         elif mode == 2: # training and evaluation
             if model_name not in trainers_map or model_name not in evaluators_map:
                 log.error(f"Unknown trainer or evaluator type: {model_name}")
-                raise ValueError(f"Unknown trainer or evaluator type: {model_name}")
+                raise YamlConfigError(f"Unknown trainer or evaluator type: {model_name}")
             self.trainer = trainers_map.get(model_name)()
             self.evaluator = evaluators_map.get(model_name)()
         else:
@@ -105,7 +107,7 @@ class TrainEvalManager(Generic[T]):
                 self.train(cfg.train)
             if self.evaluator is not None:
                 self.evaluate(cfg.eval)
-        except (TrainingError, YamlConfigError, Exception) as e:
+        except (TrainingError, YamlConfigError, RuntimeError) as e:
             log.error(f"Failed to execute: {model_name}: {e}")
             raise
 
@@ -117,13 +119,18 @@ def main(cfg: DictConfig) -> None:
     selected_dataset_eval = cfg.manager.selected_dataset_eval
 
     if selected_model is None or selected_model not in cfg.manager.models:
+        log.error(f"Invalid or missing selected_model: {selected_model}")
         raise YamlConfigError(f"Invalid or missing selected_model: {selected_model}")
 
     model = cfg.manager.models[selected_model]
     if cfg.manager.mode in (0, 2):
         if selected_dataset_train is None:
+            log.error(f"Invalid or missing selected_dataset_train: {selected_dataset_train}")
             raise YamlConfigError(f"Invalid or missing selected_dataset_train: {selected_dataset_train}")
         if selected_dataset_train not in model.datasets_train:
+            log.error(
+                f"Invalid dataset for training: {selected_dataset_train}. \n"
+                f"Available datasets: {model.datasets_train}")
             raise YamlConfigError(
                 f"Invalid dataset for training: {selected_dataset_train}. \n"
                 f"Available datasets: {model.datasets_train}"
@@ -131,8 +138,13 @@ def main(cfg: DictConfig) -> None:
 
     if cfg.manager.mode in (1, 2):
         if selected_dataset_eval is None:
+            log.error(f"Invalid or missing selected_dataset_eval: {selected_dataset_eval}")
             raise YamlConfigError(f"Invalid or missing selected_dataset_eval: {selected_dataset_eval}")
         if selected_dataset_eval not in model.datasets_eval:
+            log.error(
+                f"Invalid dataset for evaluation: {selected_dataset_eval}."
+                f"Available datasets: {model.datasets_eval}"
+            )
             raise YamlConfigError(
                 f"Invalid dataset for evaluation: {selected_dataset_eval}."
                 f"Available datasets: {model.datasets_eval}"
