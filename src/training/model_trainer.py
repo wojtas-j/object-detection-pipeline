@@ -14,7 +14,7 @@ log = setup_logger(__name__)
 
 #region ModelTrainer
 class ModelTrainer(ABC):
-    """ Abstract class for training_and_evaluation different models. """
+    """ Abstract class for training different models. """
 
     @abstractmethod
     def modify_model(self, cfg: DictConfig) -> None:
@@ -37,7 +37,7 @@ class ModelTrainer(ABC):
     @abstractmethod
     def log_final_metrics(self, cfg: DictConfig) -> None:
         """
-        Log final metrics after training_and_evaluation and evaluation.
+        Log final metrics after training model.
 
         :param cfg: Hydra configuration file.
         """
@@ -47,9 +47,9 @@ class ModelTrainer(ABC):
 
 #region YOLOTrainer
 class YOLOTrainer(ModelTrainer):
-
+    """ Trainer class for running YOLO model on specified dataset. """
     def __init__(self):
-        """ Initializer for model trainer and evaluator. """
+        """ Initializer for model trainer. """
         super().__init__()
         self.model = None
 
@@ -66,7 +66,7 @@ class YOLOTrainer(ModelTrainer):
         """
         Train a model using specified configuration file on specified dataset.
 
-        :param cfg: Configuration file to evaluate.
+        :param cfg: Hydra configuration file.
         """
         if cfg.training.device == 0 and not torch.cuda.is_available():
             log.error("CUDA is not available, cannot train model")
@@ -114,9 +114,9 @@ class YOLOTrainer(ModelTrainer):
 
     def log_final_metrics(self, cfg: DictConfig) -> None:
         """
-        Log final metrics after training_and_evaluation and evaluation.
+        Log final metrics after training model.
 
-        :param cfg: Configuration file to evaluate.
+        :param cfg: Hydra configuration file.
         """
         log.info(f"Logging final metrics after training {cfg.training.name}")
 

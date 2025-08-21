@@ -56,7 +56,7 @@ class TrainEvalManager(Generic[T]):
         :param cfg: Hydra configuration file.
         """
 
-        log.info(f"Started {cfg.evaluation.model} evaluation: {cfg.evaluation.name}")
+        log.info(f"Starting evaluation: {cfg.evaluation.name}")
         self.evaluator.evaluate_model(cfg)
 
     def run_manager(self, model_name: str, mode: int, cfg: DualDictConfig) -> None:
