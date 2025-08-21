@@ -24,6 +24,8 @@ def detection_flicker_rate(detections_per_frame: List[List[List[float]]], iou_th
     for frame_idx, dets in enumerate(detections_per_frame):
         curr_boxes = [d[:4] for d in dets]  # extract bounding boxes only
 
+        total_tracks += len(curr_boxes)
+
         if frame_idx == 0:
             prev_boxes = curr_boxes
             continue
@@ -38,10 +40,9 @@ def detection_flicker_rate(detections_per_frame: List[List[List[float]]], iou_th
             if not matched:
                 flickers += 1
 
-        total_tracks += len(curr_boxes)
         prev_boxes = curr_boxes
 
-    flicker_rate = flickers / (total_tracks + 1e-6) if total_tracks > 0 else 0.0
+    flicker_rate = flickers / total_tracks if total_tracks > 0 else 0.0
 
     return flicker_rate
 
@@ -94,6 +95,7 @@ def _compute_iou(box1: list[float], box2: list[float]) -> float:
     inter_area = max(0.0, float(x_b - x_a)) * max(0.0, float(y_b - y_a))
     box_a_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
     box_b_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
-    iou = inter_area / float(box_a_area + box_b_area - inter_area + 1e-6)
+    denom = box_a_area + box_b_area - inter_area
+    iou = inter_area / denom if denom > 0 else 0.0
     
     return iou
