@@ -4,12 +4,14 @@ import numpy as np
 import torch
 from pathlib import Path
 from abc import ABC, abstractmethod
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from ultralytics import YOLO
+from ultralytics.utils.metrics import DetMetrics
 
-from src.log_config.train_eval_metric_utils import detection_flicker_rate, iou_consistency
+from src.log_config.train_eval_metric_utils import detection_flicker_rate, iou_consistency, save_yolo_metrics, \
+    predict_yolo_evaluation_image, predict_yolo_evaluation_video, find_directory_with_files
 from src.datasets.datasets_utils import path_exists
-from src.exceptions.exceptions import EvaluationError, YamlConfigError
+from src.exceptions.exceptions import EvaluationError, YamlConfigError, MetricsLoggingError
 from src.log_config.logging_config import setup_logger
 
 log = setup_logger(name=__name__)
@@ -29,11 +31,12 @@ class ModelEvaluator(ABC):
         pass
 
     @abstractmethod
-    def log_final_metrics(self, cfg: DictConfig) -> None:
+    def log_final_metrics(self, cfg: DictConfig, results: DetMetrics | dict) -> None:
         """
         Log final metrics after evaluation.
 
         :param cfg: Hydra configuration file.
+        :param results: Evaluation metrics results.
         """
         pass
 
@@ -90,6 +93,7 @@ class YOLOEvaluator(ModelEvaluator):
             end_time = time.time()
             total_time = end_time - start_time
             log.info(f"Evaluation {model_path} on images finished {cfg.evaluation.name} in {total_time:.2f} seconds.")
+            self.log_final_metrics(cfg, results_image)
 
         # Evaluation on videos
         if cfg.evaluation.eval_videos:
@@ -106,16 +110,48 @@ class YOLOEvaluator(ModelEvaluator):
             else:
                 end_time = time.time()
                 total_time = end_time - start_time
-                log.info(
-                    f"Evaluation {model_path} on videos finished {cfg.evaluation.name} in {total_time:.2f} seconds.")
+                log.info(f"Evaluation {model_path} on videos finished {cfg.evaluation.name} in {total_time:.2f} seconds.")
+                self.log_final_metrics(cfg, results_videos)
 
-    def log_final_metrics(self, cfg: DictConfig) -> None:
+    def log_final_metrics(self, cfg: DictConfig, results: DetMetrics | dict) -> None:
         """
         Log final metrics after evaluation.
 
         :param cfg: Hydra configuration file.
+        :param results: Evaluation metrics results.
         """
-        pass
+        if isinstance(results, DetMetrics): # YOLO (images)
+            log.info(f"Logging final metrics after evaluation {cfg.evaluation.name} for images")
+
+            # Save metrics results
+            path = Path(cfg.evaluation.project) / cfg.evaluation.name
+            save_yolo_metrics(results, path, "yolo_image_evaluation_results.json")
+
+            # Save prediction for image
+            data_cfg = OmegaConf.load(cfg.evaluation.data)
+            path = find_directory_with_files(Path("datasets") / data_cfg.path / data_cfg.val, [".jpg", ".png"])
+            if path is None:
+                log.error(f"Invalid path to predict image.")
+                return
+            else:
+                predict_yolo_evaluation_image(cfg, path)
+        elif isinstance(results, dict): # YOLO (videos)
+            log.info(f"Logging final metrics after evaluation {cfg.evaluation.name} for videos")
+
+            # Save metrics results
+            path = Path(cfg.evaluation.project) / cfg.evaluation.name
+            save_yolo_metrics(results, path, "yolo_videos_evaluation_results.json")
+
+            # Save prediction for video
+            path = find_directory_with_files(Path(cfg.evaluation.videos_path), [".mp4"])
+            if path is None:
+                log.error(f"Invalid path to predict video.")
+                return
+            else:
+                predict_yolo_evaluation_video(cfg, path)
+        else:
+            log.error(f"Invalid type of final metrics results: {results}, type: {type(results)}")
+            raise MetricsLoggingError(f"Invalid type of final metrics results: {results}, type: {type(results)}")
 
     def _get_eval_params(self, cfg: DictConfig) -> dict:
         """
@@ -196,6 +232,12 @@ class YOLOEvaluator(ModelEvaluator):
         log.info(f"Average detection flicker rate: {avg_flicker:.4f}")
         log.info(f"Average IoU consistency: {avg_iou_cons:.4f}")
 
-        return dict()
+        return {
+            "average_time_ms": avg_time,
+            "average_flicker_rate": avg_flicker,
+            "average_iou_consistency": avg_iou_cons,
+            "num_videos": len(video_files),
+            "frames_evaluated": len(all_times)
+        }
 
 #endregion

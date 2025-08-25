@@ -27,3 +27,9 @@ class EvaluationError(Exception):
 
 class YamlConfigError(Exception):
     pass
+
+class MetricsLoggingError(Exception):
+    pass
+
+class PredictionError(Exception):
+    pass

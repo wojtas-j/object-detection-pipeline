@@ -1,5 +1,5 @@
 manager:
-  mode: 0 # 0 - training, 1 - evaluation, 2 - training and evaluation
+  mode: 2 # 0 - training, 1 - evaluation, 2 - training and evaluation
   selected_model: "yolo"
   selected_dataset_train: "coco" # Dataset to train or transfer learning on
   selected_dataset_eval: "bdd100k"

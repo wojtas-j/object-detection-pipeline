@@ -1,13 +1,16 @@
 import time
 import torch
+from pathlib import Path
 from abc import ABC, abstractmethod
 from omegaconf import DictConfig
 from torch import nn
 from ultralytics import YOLO
+from ultralytics.utils.metrics import DetMetrics
 
 from src.datasets.datasets_utils import path_exists
-from src.exceptions.exceptions import TrainingError, YamlConfigError
+from src.exceptions.exceptions import TrainingError, YamlConfigError, MetricsLoggingError
 from src.log_config.logging_config import setup_logger
+from src.log_config.train_eval_metric_utils import save_yolo_metrics
 
 log = setup_logger(__name__)
 
@@ -35,10 +38,11 @@ class ModelTrainer(ABC):
         pass
 
     @abstractmethod
-    def log_final_metrics(self, cfg: DictConfig) -> None:
+    def log_final_metrics(self, cfg: DictConfig, results: DetMetrics | dict) -> None:
         """
         Log final metrics after training model.
 
+        :param results: Training metrics results.
         :param cfg: Hydra configuration file.
         """
         pass
@@ -111,14 +115,22 @@ class YOLOTrainer(ModelTrainer):
             end_time = time.time()
             total_time = end_time - start_time
             log.info(f"Training {cfg.training.model} finished {cfg.training.name} in {total_time:.2f} seconds.")
+            self.log_final_metrics(cfg, results)
 
-    def log_final_metrics(self, cfg: DictConfig) -> None:
+    def log_final_metrics(self, cfg: DictConfig, results: DetMetrics | dict) -> None:
         """
         Log final metrics after training model.
 
+        :param results: Training metrics results.
         :param cfg: Hydra configuration file.
         """
-        log.info(f"Logging final metrics after training {cfg.training.name}")
+        if not isinstance(results, DetMetrics):
+            log.error(f"Invalid type of final metrics results: {results}, type: {type(results)}")
+            return
+        else:
+            log.info(f"Logging final metrics after training {cfg.training.name}")
+            path = Path(cfg.training.project) / cfg.training.name
+            save_yolo_metrics(results, path, "yolo_training_results.json")
 
     def _get_train_params(self, cfg: DictConfig) -> dict:
         """
