@@ -24,12 +24,17 @@ def save_yolo_metrics(results: DetMetrics | dict, path_to_save: str | Path, file
     path = Path(path_to_save) / file_name
     serializable = _serialize_obj(results)
 
-    # Save to JSON
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(serializable, f, indent=4)
+    try:
+        # Ensure directory exists
+        path.parent.mkdir(parents=True, exist_ok=True)
 
-    log.info(f"YOLO metrics {file_name} saved to {path}")
-
+        # Save to JSON
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(serializable, f, indent=4)
+        log.info(f"YOLO metrics {file_name} saved to {path}")
+    except OSError as e:
+        log.error(f"Failed to save YOLO metrics {file_name} to {path}: {e}")
+        return
 
 def predict_yolo_evaluation_image(cfg: DictConfig, images_path: str | Path) -> None:
     """
@@ -39,11 +44,11 @@ def predict_yolo_evaluation_image(cfg: DictConfig, images_path: str | Path) -> N
     :param images_path: Path to images folder.
     """
     images_files = sorted(images_path.glob("*.[jp][pn]g"))
-    model = YOLO(cfg.evaluation.model_path)
     image_to_predict_path = images_files[0]
     predict_directory_to = Path(cfg.evaluation.project) / cfg.evaluation.name
     prediction_name = f"{cfg.evaluation.name}_predict"
     try:
+        model = YOLO(cfg.evaluation.model_path)
         results = model.predict(
             name = prediction_name,
             project=str(predict_directory_to),
@@ -72,7 +77,6 @@ def predict_yolo_evaluation_video(cfg: DictConfig, videos_path: str | Path) -> N
     :param cfg: Hydra configuration.
     :param videos_path: Path to videos folder.
     """
-    model = YOLO(cfg.evaluation.model_path)
     videos_files = sorted(videos_path.glob("*.mp4"))
     video_to_predict_path = videos_files[0]
     predict_directory_to = Path(cfg.evaluation.project) / cfg.evaluation.name
@@ -80,6 +84,7 @@ def predict_yolo_evaluation_video(cfg: DictConfig, videos_path: str | Path) -> N
     output_folder = Path(predict_directory_to) / prediction_name
     output_folder.mkdir(parents=True, exist_ok=True)
     try:
+        model = YOLO(cfg.evaluation.model_path)
         results = model.predict(
             name=prediction_name,
             project=str(predict_directory_to),
@@ -216,12 +221,12 @@ def _compute_iou(box1: list[float], box2: list[float]) -> float:
     return iou
 
 
-def _serialize_obj(obj: Any) -> dict | list | str | int | float | bool | None:
+def _serialize_obj(obj: Any) -> Any:
     """
     Recursively converts objects (including Ultralytics `DetMetrics` and `Metric`) into JSON-serializable structures such as dicts, lists, and primitives.
 
     :param obj: Object to serialize.
-    :return: A JSON-serializable representation of the input object, which may be a dict, list, primitive, or string fallback.
+    :return: A JSON-serializable representation of the input object, which may be a dict, list, primitive, or string fallback - Any.
     """
     if isinstance(obj, (float, int, str, bool)) or obj is None:
         return obj

@@ -124,9 +124,9 @@ class YOLOTrainer(ModelTrainer):
         :param results: Training metrics results.
         :param cfg: Hydra configuration file.
         """
-        if not isinstance(results, DetMetrics):
+        if not isinstance(results, DetMetrics | dict):
             log.error(f"Invalid type of final metrics results: {results}, type: {type(results)}")
-            return
+            raise MetricsLoggingError(f"Invalid type of final metrics results: {results}, type: {type(results)}")
         else:
             log.info(f"Logging final metrics after training {cfg.training.name}")
             path = Path(cfg.training.project) / cfg.training.name
