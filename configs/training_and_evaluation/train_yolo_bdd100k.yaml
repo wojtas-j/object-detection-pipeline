@@ -1,0 +1,43 @@
+training:
+  model: "yolo11s.pt"
+  name: "bdd100k_training"
+  project: "runs/yolo/train"
+  data: "configs/training_and_evaluation/paths_files/bdd100k_yolo.yaml"
+  dataset: "bdd100k"
+  modify_model: False
+  transfer_learning: False
+  transfer_learning_model_path: "runs/yolo/train/coco_training/weights/best.pt"
+
+  epochs: 1              # Number of training_and_evaluation epochs
+  imgsz: 640             # Input image size for training_and_evaluation
+  batch: 16              # Batch size
+  device: 0              # Device to use (0 = first GPU)
+  workers: 12            # Number of data loader workers
+  optimizer: "Adam"      # Optimizer type
+  save_period: 1         # Save checkpoint every N epochs
+  patience: 5            # Early stopping patience in epochs
+  amp: True              # Enable Automatic Mixed Precision (speeds up training on compatible GPUs)
+
+  cos_lr: False          # Use cosine learning rate schedule
+  lr0: 0.002             # Initial learning rate
+  lrf: 0.01              # Final learning rate (multiplier)
+  warmup_epochs: 3.0     # Number of warmup epochs
+  warmup_momentum: 0.8   # Initial momentum during warmup
+  warmup_bias_lr: 0.1    # Initial bias learning rate during warmup
+  freeze: 0              # Number of layers to freeze at start
+  mixup: 0.05            # Probability of applying MixUp augmentation
+  copy_paste: 0.02       # Probability of Copy-Paste augmentation
+  auto_augment: none     # Auto augmentation policy
+  hsv_h: 0.01            # HSV hue augmentation factor
+  hsv_s: 0.5             # HSV saturation augmentation factor
+  hsv_v: 0.3             # HSV value (brightness) augmentation factor
+  translate: 0.05        # Image translation augmentation factor
+  scale: 0.3             # Image scale augmentation factor
+  fliplr: 0.3            # Probability of horizontal flip
+  mosaic: 1              # Probability of applying mosaic augmentation
+  close_mosaic: False    # If True, disables mosaic augmentation at the end of each epoch
+  erasing: 0.2           # Probability of random erasing augmentation
+
+  save_txt: False        # Save labels in YOLO txt format
+  save_conf: False       # Save prediction confidences in txt
+  save_crop: False       # Save cropped prediction images

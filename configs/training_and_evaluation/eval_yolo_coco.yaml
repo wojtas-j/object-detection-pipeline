@@ -1,0 +1,18 @@
+evaluation:
+  base_model: "yolo11s.pt"
+  name: "coco_evaluation"
+  project: "runs/yolo/evaluation"
+  data: "configs/training_and_evaluation/paths_files/coco_yolo.yaml"
+  dataset: "coco"
+  model_path: "runs/yolo/train/coco_training/weights/best.pt"
+  eval_videos: False # COCO has no videos to evaluate on
+  videos_path:
+
+  imgsz: 640      # Input image size for training_and_evaluation (YOLO will resize all images to this width/height)
+  batch: 16       # Number of images per batch. Larger batch → more stable training_and_evaluation but requires more VRAM
+  videos_batch: 1 # Number of frames per batch.
+  device: 0       # Device to use (0 = first GPU)
+  workers: 12     # Number of CPU threads used for loading data during training_and_evaluation
+
+  conf: 0.25      # Confidence threshold for predictions; detections above this value are considered valid
+  iou: 0.6        # Intersection over Union threshold used for NMS (Non-Maximum Suppression) to remove overlapping detections

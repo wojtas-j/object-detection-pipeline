@@ -1,0 +1,17 @@
+# Paths to bdd100k dataset
+path: bdd100k/
+train: images/train
+val: images/val
+
+# Number of classes
+nc: 7
+
+# Class names
+names:
+  - person
+  - bicycle
+  - car
+  - motorcycle
+  - bus
+  - train
+  - truck
