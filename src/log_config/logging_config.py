@@ -1,4 +1,5 @@
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -11,38 +12,24 @@ def setup_logger(
         backup_count: int = 2
 ) -> logging.Logger:
     """
-    Configure of global logger.
+    Configure global logger.
 
     :param name: The name of the logger
-    :param log_dir: Directory to store logs
+    :param log_dir: Directory to store logs (ignored in test mode)
     :param log_level: Log level
-    :param max_bytes: Max bytes to keep
-    :param backup_count: Number of backups to keep
+    :param max_bytes: Max bytes to keep (ignored in test mode)
+    :param backup_count: Number of backups to keep (ignored in test mode)
     :return: Logger instance
     """
-
-    # Create directory if not exists
-    log_path = Path(log_dir)
-    log_path.mkdir(parents=True, exist_ok=True)
+    # Check if running in pytest
+    is_test_mode = os.getenv("PYTEST_RUNNING", "0") == "1"
 
     # Create logger
     level = getattr(logging, log_level.upper(), logging.INFO)
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    logger.propagate = False
+    logger.propagate = True if is_test_mode else False
     logger.handlers.clear()
-
-    # Create file handler with size based rotation
-    if logger.handlers:
-        return logger
-
-    log_file = log_path / f"{name}.log"
-    file_handler = RotatingFileHandler(
-        log_file,
-        maxBytes=max_bytes,
-        backupCount=backup_count
-    )
-    file_handler.setLevel(level)
 
     # Create console handler
     console_handler = logging.StreamHandler()
@@ -53,10 +40,23 @@ def setup_logger(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         datefmt="%d-%m-%Y %H:%M:%S"
     )
-    file_handler.setFormatter(log_format)
     console_handler.setFormatter(log_format)
 
-    logger.addHandler(file_handler)
+    # Add console handler
     logger.addHandler(console_handler)
+
+    # Create file handler with size-based rotation, unless in test mode
+    if not is_test_mode:
+        log_path = Path(log_dir)
+        log_path.mkdir(parents=True, exist_ok=True)
+        log_file = log_path / f"{name}.log"
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=max_bytes,
+            backupCount=backup_count
+        )
+        file_handler.setLevel(level)
+        file_handler.setFormatter(log_format)
+        logger.addHandler(file_handler)
 
     return logger
