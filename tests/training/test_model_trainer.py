@@ -10,12 +10,12 @@ from src.training.model_trainer import YOLOTrainer
 
 #region Fixtures
 @pytest.fixture
-def sample_yolo_cfg():
+def sample_yolo_cfg(tmp_path):
     """ Create sample DictConfig for testing YOLOTrainer. """
     return DictConfig({
         "training": {
             "model": "yolo11s.pt",
-            "project": "runs/train",
+            "project": str(tmp_path / "runs/train"),
             "name": "test_train",
             "device": 0,
             "epochs": 1,
@@ -217,13 +217,13 @@ def test_log_final_metrics_invalid_type(sample_yolo_cfg):
 
 
 # Tests for YOLOTrainer._get_train_params
-def test_get_train_params(sample_yolo_cfg):
+def test_get_train_params(sample_yolo_cfg, tmp_path):
     """ Test _get_train_params returns correct parameters. """
     trainer = YOLOTrainer()
     params = trainer._get_train_params(sample_yolo_cfg)
     expected = {
         "name": "test_train",
-        "project": "runs/train",
+        "project": str(tmp_path / "runs/train"),
         "data": "data.yaml",
         "epochs": 1,
         "imgsz": 640,

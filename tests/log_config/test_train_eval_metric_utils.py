@@ -76,12 +76,12 @@ def sample_metric():
 
 
 @pytest.fixture
-def sample_cfg():
+def sample_cfg(tmp_path):
     """ Create sample DictConfig for testing. """
     return DictConfig({
         "evaluation": {
             "model_path": "yolov8n.pt",
-            "project": "runs/eval",
+            "project": str(tmp_path / "runs"),
             "name": "test_eval",
             "imgsz": 640,
             "conf": 0.5
