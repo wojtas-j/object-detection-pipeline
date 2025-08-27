@@ -103,12 +103,15 @@ def test_evaluate_model_invalid_model_path(_mock_path_exists, _mock_yolo, sample
 
 @patch("src.training.model_evaluator.YOLO")
 @patch("src.training.model_evaluator.path_exists", return_value=True)
-def test_evaluate_model_valid_images(_mock_path_exists, mock_yolo, sample_yolo_cfg, sample_yolo_det_metrics):
+def test_evaluate_model_valid_images(_mock_path_exists, mock_yolo, sample_yolo_cfg, sample_yolo_det_metrics, tmp_path):
     """ Test evaluate_model with valid image evaluation. """
-    mock_yolo.return_value.val.return_value = sample_yolo_det_metrics
-    evaluator = YOLOEvaluator()
-    evaluator.evaluate_model(sample_yolo_cfg)
+    fake_image = tmp_path / "image1.jpg"
+    fake_image.write_text("fake")
 
+    with patch("src.training.model_evaluator.find_directory_with_files", return_value=tmp_path):
+        mock_yolo.return_value.val.return_value = sample_yolo_det_metrics
+        evaluator = YOLOEvaluator()
+        evaluator.evaluate_model(sample_yolo_cfg)
 
     # Verify results
     mock_yolo.assert_called_once_with(sample_yolo_cfg.evaluation.model_path)
@@ -151,20 +154,25 @@ def test_evaluate_model_no_videos(_mock_path_exists, _mock_yolo, sample_yolo_cfg
 
 @patch("src.training.model_evaluator.YOLO")
 @patch("src.training.model_evaluator.path_exists", return_value=True)
-@patch("src.log_config.train_eval_metric_utils.find_directory_with_files")
-def test_evaluate_model_valid_videos(_mock_find_dir, _mock_path_exists, mock_yolo, sample_yolo_cfg, sample_yolo_det_metrics, tmp_path):
+@patch("src.training.model_evaluator.find_directory_with_files")
+@patch("src.training.model_evaluator.predict_yolo_evaluation_image")
+@patch("src.training.model_evaluator.predict_yolo_evaluation_video")
+def test_evaluate_model_valid_videos(_mock_predict_video, _mock_predict_img, _mock_find_dir, _mock_path_exists, mock_yolo, sample_yolo_cfg, sample_yolo_det_metrics, tmp_path):
     """ Test evaluate_model with valid video evaluation. """
     sample_yolo_cfg.evaluation.eval_videos = True
-    sample_yolo_cfg.evaluation.videos_path = str(tmp_path / "videos")
-    (tmp_path / "videos" / "test.mp4").mkdir(parents=True)
-    (tmp_path / "videos" / "test.mp4").touch()
+    temp_dir = (tmp_path / "videos")
+    sample_yolo_cfg.evaluation.videos_path = str(temp_dir)
+    temp_dir.mkdir(parents=True)
+    (temp_dir / "test.mp4").touch()
     mock_yolo.return_value.val.return_value = sample_yolo_det_metrics
+
     evaluator = YOLOEvaluator()
     evaluator.evaluate_model(sample_yolo_cfg)
 
     # Verify results
     mock_yolo.assert_called_once_with(sample_yolo_cfg.evaluation.model_path)
     mock_yolo.return_value.val.assert_called_once()
+    _mock_predict_video.assert_called_once()
 
 
 @patch("src.training.model_evaluator.YOLO")
