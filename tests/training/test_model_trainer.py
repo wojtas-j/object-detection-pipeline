@@ -58,6 +58,7 @@ def sample_yolo_cfg(tmp_path):
 
 @pytest.fixture
 def sample_yolo_det_metrics():
+    """ Create sample DetMetrics for testing. """
     mock = MagicMock(spec=DetMetrics)
     mock.__class__ = DetMetrics
     mock.results_dict = {"train/loss": 0.5, "val/loss": 0.6, "metrics/mAP50": 0.8}
