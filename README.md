@@ -454,6 +454,7 @@ This project is licensed under the MIT License. You are free to use, modify, and
 
 - **Author**: Jakub Wojtaś
 - **GitHub**: [wojtas-j](https://github.com/wojtas-j)
+- **LinkedIn**: [Jakub Wojtaś](https://www.linkedin.com/in/jakub-wojta%C5%9B-58a287384/)
 
 ## Bibliography
 
